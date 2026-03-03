@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { format, parseISO, startOfDay, getHours, getMinutes, differenceInMinutes, isSameDay } from "date-fns";
-import { CalendarIcon, LayoutList, CalendarDays, RefreshCw } from "lucide-react";
+import { CalendarIcon, LayoutList, CalendarDays, RefreshCw, User, Mail, Clock, MapPin } from "lucide-react";
 import { rooms, type Appointment } from "@shared/schema";
 import { useAppointments } from "@/hooks/use-appointments";
 
@@ -19,8 +19,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 
 // Operating hours
 const START_HOUR = 5;
@@ -132,6 +139,7 @@ export default function StaffDashboard() {
 function TimelineView({ appointments }: { appointments: Appointment[] }) {
   // Generate header hours (5 AM to 8 PM)
   const hours = Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => START_HOUR + i);
+  const [selectedApt, setSelectedApt] = useState<Appointment | null>(null);
 
   return (
     <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden flex flex-col">
@@ -208,7 +216,8 @@ function TimelineView({ appointments }: { appointments: Appointment[] }) {
                     return (
                       <div
                         key={apt.id}
-                        className="absolute mt-2 rounded-lg bg-primary/10 border border-primary/20 p-2 shadow-sm hover-elevate cursor-default group/block z-10 flex flex-col justify-center overflow-hidden"
+                        onClick={() => setSelectedApt(apt)}
+                        className="absolute mt-2 rounded-lg bg-primary/10 border border-primary/20 p-2 shadow-sm hover-elevate cursor-pointer group/block z-10 flex flex-col justify-center overflow-hidden transition-all active:scale-[0.98]"
                         style={{
                           // Row height is ~80px (h-20), label column is 120px
                           // Top position is calculated based on row index + header height
@@ -233,6 +242,7 @@ function TimelineView({ appointments }: { appointments: Appointment[] }) {
                           <div className="h-px bg-background/20 my-2" />
                           <p className="text-xs">Room: <span className="font-semibold">{apt.room}</span></p>
                           <p className="text-xs">Time: <span className="font-semibold">{format(start, 'h:mm a')} - {format(end, 'h:mm a')}</span></p>
+                          <p className="text-[10px] mt-1 opacity-70 text-center">Click to view details</p>
                         </div>
                       </div>
                     );
@@ -243,6 +253,64 @@ function TimelineView({ appointments }: { appointments: Appointment[] }) {
           </div>
         </div>
       </div>
+
+      {/* Appointment Detail Dialog */}
+      <Dialog open={!!selectedApt} onOpenChange={(open) => !open && setSelectedApt(null)}>
+        <DialogContent className="sm:max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-display font-bold">Appointment Details</DialogTitle>
+          </DialogHeader>
+          
+          {selectedApt && (
+            <div className="space-y-6 py-4">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <User className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-bold text-foreground">{selectedApt.userName}</h4>
+                  <div className="flex items-center text-muted-foreground text-sm">
+                    <Mail className="h-3.5 w-3.5 mr-1.5" />
+                    {selectedApt.userEmail}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl bg-secondary/50 border border-border/50">
+                  <div className="flex items-center text-xs text-muted-foreground font-medium mb-1.5 uppercase tracking-wider">
+                    <MapPin className="h-3 w-3 mr-1.5" />
+                    Room
+                  </div>
+                  <Badge variant="outline" className="bg-background text-sm font-semibold border-primary/20 text-primary">
+                    {selectedApt.room} Room
+                  </Badge>
+                </div>
+
+                <div className="p-4 rounded-xl bg-secondary/50 border border-border/50">
+                  <div className="flex items-center text-xs text-muted-foreground font-medium mb-1.5 uppercase tracking-wider">
+                    <Clock className="h-3 w-3 mr-1.5" />
+                    Time Slot
+                  </div>
+                  <p className="text-sm font-semibold text-foreground">
+                    {format(new Date(selectedApt.startTime), 'h:mm a')} - {format(new Date(selectedApt.endTime), 'h:mm a')}
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <Button 
+                  className="w-full rounded-xl" 
+                  variant="outline"
+                  onClick={() => setSelectedApt(null)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
