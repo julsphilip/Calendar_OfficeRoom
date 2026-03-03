@@ -5,7 +5,7 @@ import { z } from "zod";
 import { format, setHours, setMinutes, isBefore, isAfter, startOfDay } from "date-fns";
 import { CalendarIcon, Clock, User, Mail, Building, ArrowRight, CheckCircle2 } from "lucide-react";
 import { rooms } from "@shared/schema";
-import { useCreateAppointment } from "@/hooks/use-appointments";
+import { useAppointments, useCreateAppointment } from "@/hooks/use-appointments";
 import { useToast } from "@/hooks/use-toast";
 
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,13 @@ import {
 import { cn } from "@/lib/utils";
 
 // Operating hours: 5:00 AM to 8:00 PM
+const formatTimeLabel = (timeStr: string) => {
+  const [hour, min] = timeStr.split(':').map(Number);
+  const period = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${min.toString().padStart(2, '0')} ${period}`;
+};
+
 const generateTimeSlots = () => {
   const slots = [];
   for (let i = 5; i <= 20; i++) {
@@ -70,6 +77,7 @@ type BookingFormValues = z.infer<typeof bookingFormSchema>;
 
 export default function BookingPage() {
   const { toast } = useToast();
+  const { data: appointments } = useAppointments();
   const createAppointment = useCreateAppointment();
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -81,6 +89,41 @@ export default function BookingPage() {
       startTime: "09:00",
       endTime: "10:00",
     },
+  });
+
+  const selectedDate = form.watch("date");
+  const selectedRoom = form.watch("room");
+  const selectedStartTime = form.watch("startTime");
+
+  // Get occupied slots for selected room and date
+  const occupiedSlots = appointments?.filter(apt => 
+    apt.room === selectedRoom && 
+    selectedDate && 
+    format(new Date(apt.startTime), "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd")
+  ).map(apt => ({
+    start: format(new Date(apt.startTime), "HH:mm"),
+    end: format(new Date(apt.endTime), "HH:mm")
+  })) || [];
+
+  const isSlotOccupied = (time: string) => {
+    return occupiedSlots.some(slot => time >= slot.start && time < slot.end);
+  };
+
+  const availableStartSlots = TIME_SLOTS.slice(0, -1).filter(time => !isSlotOccupied(time));
+  
+  const availableEndSlots = TIME_SLOTS.slice(1).filter(time => {
+    const startIdx = TIME_SLOTS.indexOf(selectedStartTime);
+    const currentIdx = TIME_SLOTS.indexOf(time);
+    if (currentIdx <= startIdx) return false;
+    
+    // Check if there's any appointment between selected start and this end time
+    const nextAppointment = occupiedSlots
+      .filter(slot => slot.start > selectedStartTime)
+      .sort((a, b) => a.start.localeCompare(b.start))[0];
+    
+    if (nextAppointment && time > nextAppointment.start) return false;
+    
+    return true;
   });
 
   function onSubmit(data: BookingFormValues) {
@@ -100,6 +143,7 @@ export default function BookingPage() {
     }, {
       onSuccess: () => {
         setIsSuccess(true);
+        form.reset();
         toast({
           title: "Room Booked Successfully!",
           description: `Your appointment for the ${data.room} room has been confirmed.`,
@@ -314,7 +358,7 @@ export default function BookingPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-foreground/80">Start Time</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                             <FormControl>
                               <SelectTrigger className="h-12 rounded-xl bg-background/50">
                                 <div className="flex items-center gap-2">
@@ -324,8 +368,8 @@ export default function BookingPage() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="max-h-60 rounded-xl">
-                              {TIME_SLOTS.slice(0, -1).map((time) => (
-                                <SelectItem key={time} value={time} className="rounded-lg">{time}</SelectItem>
+                              {availableStartSlots.map((time) => (
+                                <SelectItem key={time} value={time} className="rounded-lg">{formatTimeLabel(time)}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -340,7 +384,7 @@ export default function BookingPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-foreground/80">End Time</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                             <FormControl>
                               <SelectTrigger className="h-12 rounded-xl bg-background/50">
                                 <div className="flex items-center gap-2">
@@ -350,8 +394,8 @@ export default function BookingPage() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="max-h-60 rounded-xl">
-                              {TIME_SLOTS.slice(1).map((time) => (
-                                <SelectItem key={time} value={time} className="rounded-lg">{time}</SelectItem>
+                              {availableEndSlots.map((time) => (
+                                <SelectItem key={time} value={time} className="rounded-lg">{formatTimeLabel(time)}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>

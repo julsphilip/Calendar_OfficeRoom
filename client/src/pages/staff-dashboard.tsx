@@ -153,9 +153,10 @@ function TimelineView({ appointments }: { appointments: Appointment[] }) {
             {hours.slice(0, -1).map((hour, i) => (
               <div 
                 key={hour} 
-                className="col-span-2 text-xs font-semibold text-muted-foreground border-l border-border/50 pl-2 pb-4"
+                className="col-span-2 text-xs font-semibold text-muted-foreground border-l border-border/50 pl-2 pb-4 flex flex-col items-center justify-end h-full"
               >
-                {format(new Date(2000, 0, 1, hour), 'h a')}
+                <span>{format(new Date(2000, 0, 1, hour), 'h a')}</span>
+                <span className="text-[10px] opacity-60">PST</span>
               </div>
             ))}
 
@@ -207,20 +208,20 @@ function TimelineView({ appointments }: { appointments: Appointment[] }) {
                     return (
                       <div
                         key={apt.id}
-                        className="absolute mt-3 rounded-lg bg-primary/10 border border-primary/20 p-2 shadow-sm hover-elevate cursor-default group/block z-10"
+                        className="absolute mt-2 rounded-lg bg-primary/10 border border-primary/20 p-2 shadow-sm hover-elevate cursor-default group/block z-10 flex flex-col justify-center overflow-hidden"
                         style={{
                           // Row height is ~80px (h-20), label column is 120px
                           // Top position is calculated based on row index + header height
-                          top: `${(roomIdx + 1) * 80 + 36}px`, // +36 for header roughly
+                          top: `${(roomIdx + 1) * 80 + 20}px`, 
                           // Left is 120px + (offset * columnWidth)
                           left: `calc(120px + (${startOffset} * (100% - 120px) / ${TIMELINE_COLS}))`,
                           width: `calc(${durationBlocks} * (100% - 120px) / ${TIMELINE_COLS})`,
-                          height: '56px',
+                          height: '60px',
                         }}
                       >
-                        <div className="w-full h-full overflow-hidden flex flex-col justify-center border-l-4 border-l-primary pl-2">
-                          <p className="text-xs font-bold text-foreground truncate">{apt.userName}</p>
-                          <p className="text-[10px] text-muted-foreground truncate">
+                        <div className="w-full h-full flex flex-col justify-center border-l-4 border-l-primary pl-2">
+                          <p className="text-[11px] font-bold text-foreground truncate leading-tight">{apt.userName}</p>
+                          <p className="text-[9px] text-muted-foreground truncate leading-tight">
                             {format(start, 'h:mm a')} - {format(end, 'h:mm a')}
                           </p>
                         </div>
