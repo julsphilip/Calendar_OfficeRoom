@@ -155,7 +155,7 @@ function TimelineView({ appointments }: { appointments: Appointment[] }) {
                 key={hour} 
                 className="col-span-2 text-xs font-semibold text-muted-foreground border-l border-border/50 pl-2 pb-4"
               >
-                {format(setHours(new Date(), hour), 'h a')}
+                {format(new Date(2000, 0, 1, hour), 'h a')}
               </div>
             ))}
 
