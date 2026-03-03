@@ -29,7 +29,7 @@ export function AppSidebar() {
           </div>
           <div>
             <h2 className="text-lg font-bold font-display leading-tight text-foreground">ASSIST</h2>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Workspaces</p>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">APPOINTMENT MODULE</p>
           </div>
         </div>
       </SidebarHeader>
