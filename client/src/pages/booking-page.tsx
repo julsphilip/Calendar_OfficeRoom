@@ -131,8 +131,12 @@ export default function BookingPage() {
     const [startHour, startMin] = data.startTime.split(':').map(Number);
     const [endHour, endMin] = data.endTime.split(':').map(Number);
     
-    const startTimeDate = setMinutes(setHours(data.date, startHour), startMin);
-    const endTimeDate = setMinutes(setHours(data.date, endHour), endMin);
+    // Ensure the date is treated correctly in the local timezone (PST)
+    const startTimeDate = new Date(data.date);
+    startTimeDate.setHours(startHour, startMin, 0, 0);
+    
+    const endTimeDate = new Date(data.date);
+    endTimeDate.setHours(endHour, endMin, 0, 0);
 
     createAppointment.mutate({
       room: data.room,

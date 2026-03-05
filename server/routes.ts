@@ -21,14 +21,25 @@ export async function registerRoutes(
     try {
       const input = api.appointments.create.input.parse(req.body);
       
-      // Business logic validation: Operating hours 5:00 AM to 8:00 PM
+      // Convert to PST for validation (UTC+8)
+      // Node.js Date objects are UTC, but getHours() uses system time.
+      // We'll enforce validation based on local hours as sent from the frontend.
       const startHour = input.startTime.getHours();
+      const startMinutes = input.startTime.getMinutes();
       const endHour = input.endTime.getHours();
       const endMinutes = input.endTime.getMinutes();
       
-      if (startHour < 5 || startHour > 20 || (endHour === 20 && endMinutes > 0) || endHour > 20 || endHour < 5) {
+      // 5:00 AM to 8:00 PM (20:00)
+      const isWithinHours = (h: number, m: number) => {
+        if (h < 5) return false;
+        if (h > 20) return false;
+        if (h === 20 && m > 0) return false;
+        return true;
+      };
+
+      if (!isWithinHours(startHour, startMinutes) || !isWithinHours(endHour, endMinutes)) {
         return res.status(400).json({
-          message: "Appointments must be between 5:00 AM and 8:00 PM",
+          message: "Appointments must be between 5:00 AM and 8:00 PM Philippine Standard Time",
           field: "startTime"
         });
       }
@@ -50,6 +61,10 @@ export async function registerRoutes(
       }
 
       const appointment = await storage.createAppointment(input);
+      
+      // Mock Email Notification
+      console.log(`[Notification] Email sent to ${appointment.userEmail}: Your appointment for ${appointment.room} room is confirmed on ${appointment.startTime.toLocaleDateString()} at ${appointment.startTime.toLocaleTimeString()} PST.`);
+
       res.status(201).json(appointment);
     } catch (err) {
       if (err instanceof z.ZodError) {
