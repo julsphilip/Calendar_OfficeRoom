@@ -106,6 +106,13 @@ export default function BookingPage() {
   })) || [];
 
   const isSlotOccupied = (time: string) => {
+    // If date is today, check if time has already passed
+    if (selectedDate && format(selectedDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd")) {
+      const [h, m] = time.split(':').map(Number);
+      const slotDate = new Date();
+      slotDate.setHours(h, m, 0, 0);
+      if (isBefore(slotDate, new Date())) return true;
+    }
     return occupiedSlots.some(slot => time >= slot.start && time < slot.end);
   };
 
@@ -201,9 +208,9 @@ export default function BookingPage() {
             </span>
             Rooms Available
           </div>
-          <h1 className="text-4xl md:text-5xl font-display font-extrabold text-foreground leading-[1.1] mb-6">
+          <h1 className="text-4xl md:text-5xl font-display font-extrabold text-primary leading-[1.1] mb-6">
             Reserve Your<br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent-foreground">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
               Ideal Workspace
             </span>
           </h1>

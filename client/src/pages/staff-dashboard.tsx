@@ -161,10 +161,10 @@ function TimelineView({ appointments }: { appointments: Appointment[] }) {
             {hours.slice(0, -1).map((hour, i) => (
               <div 
                 key={hour} 
-                className="col-span-2 text-xs font-semibold text-muted-foreground border-l border-border/50 pl-2 pb-4 flex flex-col items-center justify-end h-full"
+                className="col-span-2 text-[10px] font-bold text-primary border-l border-border/50 pl-1 pb-4 flex flex-col items-start justify-end h-full"
               >
-                <span>{format(new Date(2000, 0, 1, hour), 'h a')}</span>
-                <span className="text-[10px] opacity-60">PST</span>
+                <span>{format(new Date(2000, 0, 1, hour), 'h:mm a')}</span>
+                <span className="text-[8px] opacity-50 font-normal">PST</span>
               </div>
             ))}
 
@@ -338,11 +338,11 @@ function ListView({ appointments }: { appointments: Appointment[] }) {
       <Table>
         <TableHeader className="bg-muted/30">
           <TableRow className="hover:bg-transparent">
-            <TableHead className="font-semibold">Time</TableHead>
-            <TableHead className="font-semibold">Room</TableHead>
-            <TableHead className="font-semibold">Client Name</TableHead>
-            <TableHead className="font-semibold">Email</TableHead>
-            <TableHead className="font-semibold text-right">Duration</TableHead>
+            <TableHead className="font-semibold text-primary">Time (PST)</TableHead>
+            <TableHead className="font-semibold text-primary">Room</TableHead>
+            <TableHead className="font-semibold text-primary">Client Name</TableHead>
+            <TableHead className="font-semibold text-primary">Email</TableHead>
+            <TableHead className="font-semibold text-primary text-right">Duration</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

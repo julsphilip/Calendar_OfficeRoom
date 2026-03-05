@@ -21,15 +21,22 @@ export async function registerRoutes(
     try {
       const input = api.appointments.create.input.parse(req.body);
       
-      // Convert to PST for validation (UTC+8)
-      // Node.js Date objects are UTC, but getHours() uses system time.
-      // We'll enforce validation based on local hours as sent from the frontend.
-      const startHour = input.startTime.getHours();
-      const startMinutes = input.startTime.getMinutes();
-      const endHour = input.endTime.getHours();
-      const endMinutes = input.endTime.getMinutes();
+      // Philippine Standard Time (UTC+8) validation
+      // Use a consistent offset to avoid server timezone issues
+      const getPSTTime = (date: Date) => {
+        // Adjust for UTC+8
+        const utc = date.getTime() + (date.getTimezoneOffset() * 60000);
+        return new Date(utc + (3600000 * 8));
+      };
+
+      const pstStart = getPSTTime(input.startTime);
+      const pstEnd = getPSTTime(input.endTime);
       
-      // 5:00 AM to 8:00 PM (20:00)
+      const startHour = pstStart.getHours();
+      const startMinutes = pstStart.getMinutes();
+      const endHour = pstEnd.getHours();
+      const endMinutes = pstEnd.getMinutes();
+      
       const isWithinHours = (h: number, m: number) => {
         if (h < 5) return false;
         if (h > 20) return false;
@@ -39,7 +46,7 @@ export async function registerRoutes(
 
       if (!isWithinHours(startHour, startMinutes) || !isWithinHours(endHour, endMinutes)) {
         return res.status(400).json({
-          message: "Appointments must be between 5:00 AM and 8:00 PM Philippine Standard Time",
+          message: "Appointments must be between 5:00 AM and 8:00 PM Philippine Standard Time (PST)",
           field: "startTime"
         });
       }
@@ -62,8 +69,24 @@ export async function registerRoutes(
 
       const appointment = await storage.createAppointment(input);
       
-      // Mock Email Notification
-      console.log(`[Notification] Email sent to ${appointment.userEmail}: Your appointment for ${appointment.room} room is confirmed on ${appointment.startTime.toLocaleDateString()} at ${appointment.startTime.toLocaleTimeString()} PST.`);
+      // Mock Notification logic
+      const appointmentTime = pstStart.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', hour12: true });
+      const appointmentDate = pstStart.toLocaleDateString('en-PH', { dateStyle: 'full' });
+      console.log(`
+------------------------------------------------------------
+[PRODUCTION EMAIL SIMULATION]
+To: ${appointment.userEmail}
+Subject: Booking Confirmation - ${appointment.room} Room
+Body: 
+Hi ${appointment.userName},
+
+Your booking for the ${appointment.room} room has been confirmed.
+Date: ${appointmentDate}
+Time: ${appointmentTime} (Philippine Standard Time)
+
+Thank you for using our service!
+------------------------------------------------------------
+      `);
 
       res.status(201).json(appointment);
     } catch (err) {
